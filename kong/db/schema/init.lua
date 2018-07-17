@@ -887,6 +887,35 @@ function Schema:validate_primary_key(pk, ignore_others)
 end
 
 
+--- Ensure that a given table contains only the allowed options.
+-- @param options A table with options.
+-- @param ignore_others If true, the function will ignore non-option key
+-- entries.
+-- @return True on success; nil, error message and error table otherwise.
+function Schema:validate_options(input)
+  if not input then
+    return true
+  end
+
+  local errors = {}
+
+  if self.schema.ttl == true and input.ttl ~= nil then
+    if type(input.ttl) ~= "number" then
+      errors.ttl = validation_errors.NUMBER
+    end
+
+    if input.ttl < 0 then
+      errors.ttl = "value should be greater than or equal to 0"
+    end
+  end
+
+  if next(errors) then
+    return nil, errors
+  end
+  return true
+end
+
+
 local Set_mt = {
   __index = function(set, key)
     for i, val in ipairs(set) do
@@ -1062,7 +1091,7 @@ end
 -- On failure, it returns nil and a table containing all errors,
 -- indexed numerically for general errors, and by field name for field errors.
 -- In all cases, the input table is untouched.
-function Schema:validate_insert(input)
+function Schema:validate_insert(input, options)
   return self:validate(input, true)
 end
 
@@ -1076,7 +1105,7 @@ end
 -- On failure, it returns nil and a table containing all errors,
 -- indexed numerically for general errors, and by field name for field errors.
 -- In all cases, the input table is untouched.
-function Schema:validate_update(input)
+function Schema:validate_update(input, options)
 
   -- Monkey-patch some error messages to make it clearer why they
   -- apply during an update. This avoids propagating update-awareness
@@ -1105,7 +1134,7 @@ end
 -- On failure, it returns nil and a table containing all errors,
 -- indexed numerically for general errors, and by field name for field errors.
 -- In all cases, the input table is untouched.
-function Schema:validate_upsert(input)
+function Schema:validate_upsert(input, options)
   return self:validate(input, true)
 end
 
